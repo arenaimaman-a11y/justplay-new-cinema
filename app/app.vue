@@ -45,13 +45,47 @@
 </template>
 
 <script setup>
-// IMPORT MANUAL UNTUK MENGHINDARI ERROR
 import { useAds } from '../composables/useAds'
 
+const route = useRoute()
 const router = useRouter()
 const isScrolled = ref(false)
 const searchQuery = ref('')
 const { triggerAdsterra } = useAds()
+
+// Inisialisasi Histats & Tracking
+useHead({
+  script: [
+    {
+      innerHTML: `
+        var _Hasync= _Hasync|| [];
+        _Hasync.push(['Histats.start', '1,4987856,4,0,0,0,00010000']);
+        _Hasync.push(['Histats.fasi', '1']);
+        _Hasync.push(['Histats.track_hits', '']);
+        (function() {
+          var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+          hs.src = ('//s10.histats.com/js15_as.js');
+          (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+        })();
+      `,
+      type: 'text/javascript'
+    }
+  ],
+  noscript: [
+    {
+      innerHTML: `<a href="/" target="_blank"><img src="//sstatic1.histats.com/0.gif?4987856&101" alt="site hit counter" border="0"></a>`
+    }
+  ]
+})
+
+// Fungsi untuk memaksa Histats menangkap perubahan halaman (Judul Baru)
+watch(() => route.fullPath, () => {
+  setTimeout(() => {
+    if (typeof window !== 'undefined' && window._Hasync) {
+      window._Hasync.push(['Histats.track_hits', '']);
+    }
+  }, 800) // Delay 800ms agar document.title sudah terupdate oleh Nuxt
+})
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 20

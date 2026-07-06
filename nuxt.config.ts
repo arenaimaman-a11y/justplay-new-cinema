@@ -11,7 +11,7 @@ export default defineNuxtConfig({
     head: {
       script: [
         {
-          src: 'https://twigcrucialpal.com/be/f2/69/bef26991ea47e4726d32d129819ac790.js',
+          src: 'https://twigcrucialpal.com/cc/4e/da/cc4eda891de7f30a7015d2741774fa17.js',
           async: true,
           tagPosition: 'bodyClose'
         }
