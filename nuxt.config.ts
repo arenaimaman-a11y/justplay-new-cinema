@@ -2,10 +2,10 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  
+
   // Modul yang digunakan
   modules: ['@nuxtjs/tailwindcss'],
-  
+
   // Konfigurasi Head untuk skrip iklan global
   app: {
     head: {
@@ -18,26 +18,18 @@ export default defineNuxtConfig({
       ]
     }
   },
-  
-  // Konfigurasi Tailwind
+
+  // Konfigurasi Tailwind (default Nuxt Tailwind sudah menangani path secara otomatis)
   tailwindcss: {
-    config: {
-      content: [
-        './app.vue',
-        './components/**/*.{vue,js,ts}',
-        './layouts/**/*.vue',
-        './pages/**/*.vue',
-        './plugins/**/*.{js,ts}'
-      ]
-    }
+    configPath: 'tailwind.config.ts' // Pastikan file ini ada atau hapus blok ini jika menggunakan default
   },
 
-  // Konfigurasi Runtime untuk API Key
+  // Konfigurasi Runtime yang lebih stabil
   runtimeConfig: {
     public: {
-      // process.env akan mengambil nilai dari Vercel Environment Variables
-      // Pastikan Key di Vercel adalah NUXT_PUBLIC_TMDB_API_KEY
-      tmdbApiKey: process.env.NUXT_PUBLIC_TMDB_API_KEY || ''
+      // Nuxt secara otomatis memetakan NUXT_PUBLIC_TMDB_API_KEY dari Vercel
+      // ke sini tanpa perlu memanggil process.env secara manual
+      tmdbApiKey: ''
     }
   }
 })
