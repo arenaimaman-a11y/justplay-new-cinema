@@ -11,24 +11,23 @@ export default defineNuxtConfig({
     head: {
       script: [
         {
-          src: 'https://twigcrucialpal.com/cc/4e/da/cc4eda891de7f30a7015d2741774fa17.js',
+          // MEMANGGIL KODE IKLAN ADSTERRA YANG BARU
+          src: 'https://twigcrucialpal.com/d2/44/41/d24441981f5f5c0080b9c4b671cd48b7.js',
           async: true,
-          tagPosition: 'bodyClose'
+          tagPosition: 'bodyClose' // Diletakkan di bawah sebelum </body> agar tidak memperlambat loading film
         }
       ]
     }
   },
 
-  // Konfigurasi Tailwind (default Nuxt Tailwind sudah menangani path secara otomatis)
+  // Konfigurasi Tailwind
   tailwindcss: {
-    configPath: 'tailwind.config.ts' // Pastikan file ini ada atau hapus blok ini jika menggunakan default
+    configPath: 'tailwind.config.ts' 
   },
 
-  // Konfigurasi Runtime yang lebih stabil
+  // Konfigurasi Runtime untuk API Key TMDB (Film)
   runtimeConfig: {
     public: {
-      // Nuxt secara otomatis memetakan NUXT_PUBLIC_TMDB_API_KEY dari Vercel
-      // ke sini tanpa perlu memanggil process.env secara manual
       tmdbApiKey: ''
     }
   }
