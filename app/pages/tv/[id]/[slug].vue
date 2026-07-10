@@ -1,7 +1,5 @@
 <template>
   <main class="bg-gray-950 min-h-screen text-gray-200 pt-24 pb-16 relative overflow-hidden">
-    <div v-if="activeDropdown" @click="activeDropdown = null" class="fixed inset-0 z-40 md:hidden"></div>
-
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-red-600/5 blur-[140px] pointer-events-none rounded-full"></div>
 
     <div class="container mx-auto px-4 md:px-8 max-w-4xl relative z-10">
@@ -10,25 +8,46 @@
         <span class="transform group-hover:-translate-x-1 transition-transform">←</span> Return to Discover
       </NuxtLink>
 
-      <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-gray-900 shadow-red-950/10">
-        
-        <div v-if="!isPlayerUnlocked" @click="handleFakeClick" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80 cursor-pointer group">
-          <div class="w-20 h-20 bg-red-600/90 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.5)] group-hover:scale-110 transition-transform duration-300">
-            <svg class="w-10 h-10 text-white ml-1.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-          </div>
-          <p class="mt-4 text-sm font-bold text-white/90 animate-pulse">Play Now</p>
-        </div>
+      <div 
+        class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-gray-900 shadow-red-950/10 bg-cover bg-center group"
+        :style="{ backgroundImage: tvDetails?.backdrop_path ? `url(https://image.tmdb.org/t/p/w1280${tvDetails.backdrop_path})` : 'none' }"
+      >
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent z-20"></div>
 
-        <iframe 
-          :src="currentPlayerUrl" 
-          class="w-full h-full" 
-          allowfullscreen 
-          scrolling="no"
-          frameborder="0"
-        ></iframe>
+        <div class="absolute bottom-4 left-4 z-30">
+          <p class="text-[10px] font-black text-white tracking-wider uppercase bg-red-600/90 backdrop-blur-md px-2.5 py-1 rounded-md shadow-lg">
+            S{{ currentSeason }} · E{{ currentEpisode }} Selected
+          </p>
+        </div>
       </div>
 
-      <div class="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-900/20 backdrop-blur-md border border-white/[0.04] rounded-2xl px-5 py-3.5 shadow-xl">
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button 
+          @click="goToWatchPage"
+          class="w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-3.5 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(220,38,38,0.25)] hover:shadow-[0_4px_30px_rgba(220,38,38,0.45)] active:scale-[0.98] group"
+        >
+          <svg class="w-3.5 h-3.5 fill-current text-white transform group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          WATCH NOW
+        </button>
+
+        <button 
+          @click="triggerDownload"
+          class="w-full inline-flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 border border-white/[0.05] hover:border-white/10 text-gray-300 hover:text-white font-bold text-xs py-3.5 rounded-xl transition-all duration-300 active:scale-[0.98]"
+        >
+          <svg class="w-3.5 h-3.5 stroke-current fill-none" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          DOWNLOAD EPISODE
+        </button>
+      </div>
+      
+      <p class="mt-4 text-[11px] font-bold text-white/40 tracking-wider uppercase bg-black/40 px-3 py-1.5 rounded-xl border border-white/[0.03] inline-block">
+      </p>
+
+      <div class="mt-6 flex flex-col gap-5 bg-gray-900/20 backdrop-blur-md border border-white/[0.04] rounded-2xl p-5 shadow-xl">
+        
         <div class="flex flex-col gap-2">
           <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select Server (Alternative)</span>
           <div class="flex flex-wrap items-center gap-2">
@@ -49,39 +68,52 @@
           </div>
         </div>
 
-        <div class="flex items-end sm:items-center gap-3 relative self-start md:self-auto">
-          <div class="relative">
-            <span class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 md:hidden">Season</span>
-            <button @click="toggleDropdown('season')" class="flex items-center gap-2 bg-gray-900/60 hover:bg-gray-900 border border-white/[0.05] hover:border-white/[0.1] text-xs font-bold text-gray-200 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-md active:scale-95">
-              <span>Season {{ selectedSeasonNumber }}</span>
-              <svg class="w-3 h-3 text-gray-500 transition-transform duration-300" :class="{ 'rotate-180 text-red-500': activeDropdown === 'season' }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            <transition name="dropdown">
-              <div v-if="activeDropdown === 'season'" class="fixed md:absolute inset-x-4 md:inset-x-auto top-[20%] md:top-full mt-2 w-[calc(100vw-32px)] md:w-40 bg-gray-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl p-1.5 z-[100] max-h-[60vh] overflow-y-auto custom-scrollbar">
-                <button v-for="season in validSeasons" :key="season.id" @click="selectSeason(season.season_number)" :class="['w-full text-left px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 block', selectedSeasonNumber === season.season_number ? 'bg-red-600 text-white font-bold' : 'text-gray-400 hover:bg-white/[0.08] hover:text-white']">Season {{ season.season_number }}</button>
-              </div>
-            </transition>
-          </div>
+        <div class="border-t border-white/[0.04] my-1"></div>
 
-          <div class="flex items-center gap-2">
-            <div class="relative">
-              <span class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 md:hidden">Episode</span>
-              <button @click="toggleDropdown('episode')" :disabled="!currentSeasonDetails?.episodes" class="flex items-center gap-2 bg-gray-900/60 hover:bg-gray-900 border border-white/[0.05] hover:border-white/[0.1] text-xs font-bold text-gray-200 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-md active:scale-95 disabled:opacity-40">
-                <span>Ep {{ currentEpisode }}</span>
-                <svg class="w-3 h-3 text-gray-500 transition-transform duration-300" :class="{ 'rotate-180 text-red-500': activeDropdown === 'episode' }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              <transition name="dropdown">
-                <div v-if="activeDropdown === 'episode' && currentSeasonDetails?.episodes" class="fixed md:absolute inset-x-4 md:inset-x-auto top-[20%] md:top-full mt-2 w-[calc(100vw-32px)] md:w-44 bg-gray-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl p-1.5 z-[100] max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  <button v-for="ep in currentSeasonDetails.episodes" :key="ep.id" @click="selectEpisode(ep.episode_number)" :class="['w-full text-left px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center justify-between', currentEpisode === ep.episode_number ? 'bg-red-600 text-white font-bold' : 'text-gray-400 hover:bg-white/[0.08] hover:text-white']">
-                    <span>Episode {{ ep.episode_number }}</span>
-                    <span v-if="currentEpisode === ep.episode_number" class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                  </button>
-                </div>
-              </transition>
-            </div>
-            <button @click="nextEpisode" class="bg-gray-900/60 hover:bg-red-600 border border-white/[0.05] hover:border-red-600 text-gray-400 hover:text-white p-2.5 rounded-xl transition-all duration-300 shadow-md active:scale-95" title="Next Episode"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg></button>
+        <div class="flex flex-col gap-2">
+          <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select Season</span>
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
+            <button
+              v-for="season in validSeasons"
+              :key="season.id"
+              @click="selectSeason(season.season_number)"
+              :class="[
+                'px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-300 snap-start flex-shrink-0',
+                selectedSeasonNumber === season.season_number
+                  ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/30 scale-105'
+                  : 'bg-gray-950/40 border-white/[0.04] text-gray-400 hover:text-white hover:bg-gray-900'
+              ]"
+            >
+              Season {{ season.season_number }}
+            </button>
           </div>
         </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select Episode</span>
+            <span class="text-[10px] font-medium text-gray-400 bg-white/5 px-2 py-0.5 rounded-md">Total: {{ currentSeasonDetails?.episodes?.length || 0 }} Eps</span>
+          </div>
+          
+          <div v-if="currentSeasonDetails?.episodes" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+            <button
+              v-for="ep in currentSeasonDetails.episodes"
+              :key="ep.id"
+              @click="selectEpisode(ep.episode_number)"
+              :class="[
+                'py-2.5 text-xs font-bold rounded-lg border transition-all duration-200 text-center relative overflow-hidden group',
+                currentEpisode === ep.episode_number
+                  ? 'bg-red-600 border-red-600 text-white shadow-md font-black'
+                  : 'bg-gray-950/60 border-white/[0.03] text-gray-400 hover:text-white hover:bg-gray-900 hover:border-white/10'
+              ]"
+            >
+              {{ ep.episode_number }}
+              <div v-if="currentEpisode === ep.episode_number" class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full"></div>
+            </button>
+          </div>
+          <div v-else class="text-xs text-gray-600 italic py-2">Loading episodes structure...</div>
+        </div>
+
       </div>
 
       <div class="mt-3 flex items-center justify-between px-2 text-xs">
@@ -154,12 +186,13 @@
           </NuxtLink>
         </div>
       </div>
+
     </div>
   </main>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -171,7 +204,6 @@ const tmdbImgUrl = 'https://image.tmdb.org/t/p/w500'
 
 const isExpanded = ref(false)
 const isReporting = ref(false)
-const isPlayerUnlocked = ref(false)
 const reportStatus = ref('')
 
 const serverSources = [
@@ -180,11 +212,6 @@ const serverSources = [
   { id: 'vidsrc_to', name: 'Server 3 (UHD)' }
 ]
 const activeServer = ref('vidsrc_me')
-
-const handleFakeClick = () => {
-  window.open('https://s.pemsrv.com/v1/link.php?cat=&idzone=5969584&type=8', '_blank')
-  isPlayerUnlocked.value = true
-}
 
 const slugify = (text) => {
   if (!text) return ''
@@ -205,42 +232,23 @@ if (parts.length >= 3) {
     cleanTitleParts = parts.slice(0, -2)
   }
 }
-const baseSlugText = cleanTitleParts.join('-')
 const tvTitle = cleanTitleParts.join(' ')
 
 const currentSeason = ref(initialSeason)
 const currentEpisode = ref(initialEpisode)
 const selectedSeasonNumber = ref(initialSeason)
-const activeDropdown = ref(null)
 
-const toggleDropdown = (type) => activeDropdown.value = activeDropdown.value === type ? null : type
-const selectSeason = (seasonNum) => { selectedSeasonNumber.value = seasonNum; activeDropdown.value = null }
-const selectEpisode = (epNum) => { changeEpisode(epNum); activeDropdown.value = null }
-const closeDropdowns = (e) => { if (!e.target.closest('.relative')) activeDropdown.value = null }
-const changeServer = (serverId) => { activeServer.value = serverId; isPlayerUnlocked.value = false }
-
-const nextEpisode = () => {
-  if (currentSeasonDetails.value?.episodes) {
-    const nextEp = currentEpisode.value + 1
-    const exists = currentSeasonDetails.value.episodes.find(e => e.episode_number === nextEp)
-    if (exists) {
-      changeEpisode(nextEp)
-    } else {
-      const nextSeason = selectedSeasonNumber.value + 1
-      if (tvDetails.value?.seasons?.find(s => s.season_number === nextSeason)) {
-        changeEpisode(1, nextSeason)
-      }
-    }
-  }
+// Handler pemilihan item season
+const selectSeason = (seasonNum) => {
+  selectedSeasonNumber.value = seasonNum
+  changeEpisode(1, seasonNum)
 }
 
-const currentPlayerUrl = computed(() => {
-  const s = currentSeason.value
-  const e = currentEpisode.value
-  if (activeServer.value === 'vidsrc_me') return `https://vidsrc.me/embed/tv?tmdb=${tvId}&season=${s}&episode=${e}`
-  if (activeServer.value === 'vidsrc_cc') return `https://vidsrc.cc/v2/embed/tv/${tvId}/${s}/${e}`
-  return `https://vidsrc.to/embed/tv/${tvId}/${s}/${e}`
-})
+const selectEpisode = (epNum) => { 
+  changeEpisode(epNum)
+}
+
+const changeServer = (serverId) => { activeServer.value = serverId }
 
 const triggerReport = () => {
   isReporting.value = true
@@ -253,9 +261,12 @@ const triggerReport = () => {
 
 const triggerRequest = () => console.log('Request button clicked')
 
-onMounted(() => window.addEventListener('click', closeDropdowns))
-onUnmounted(() => window.removeEventListener('click', closeDropdowns))
+const triggerDownload = () => {
+  const downloadUrl = `https://twigcrucialpal.com/qhexrkev?key=8f5d9e9efc0679706823f58257516b31`
+  window.open(downloadUrl, '_blank')
+}
 
+// Fetch Data Asynchronous Utama
 const [{ data: tvDetails }, { data: credits }, { data: recommendations }] = await Promise.all([
   useFetch(`https://api.themoviedb.org/3/tv/${tvId}`, { query: { api_key: config.public.tmdbApiKey, language: 'en-US' } }),
   useFetch(`https://api.themoviedb.org/3/tv/${tvId}/credits`, { query: { api_key: config.public.tmdbApiKey, language: 'en-US' } }),
@@ -264,25 +275,40 @@ const [{ data: tvDetails }, { data: credits }, { data: recommendations }] = awai
 
 const validSeasons = computed(() => tvDetails.value?.seasons?.filter(s => s.season_number > 0) || [])
 
+// Fetch data details episode per season
 const { data: currentSeasonDetails } = await useFetch(() => `https://api.themoviedb.org/3/tv/${tvId}/season/${selectedSeasonNumber.value}`, {
   watch: [selectedSeasonNumber],
   query: { api_key: config.public.tmdbApiKey, language: 'en-US' }
 })
 
-watch(selectedSeasonNumber, (newSeason) => { if (newSeason !== currentSeason.value) changeEpisode(1, newSeason) })
-
 const changeEpisode = (epNum, seNum = selectedSeasonNumber.value) => {
   currentSeason.value = seNum
   currentEpisode.value = epNum
   selectedSeasonNumber.value = seNum
-  isPlayerUnlocked.value = false
-  router.push(`/tv/${tvId}/${baseSlugText}-${seNum}-${epNum}`)
+  
+  router.push({
+    path: `/tv/${tvId}/watch`,
+    query: {
+      s: seNum,
+      e: epNum,
+      server: activeServer.value
+    }
+  })
+}
+
+const goToWatchPage = () => {
+  router.push({
+    path: `/tv/${tvId}/watch`,
+    query: {
+      s: currentSeason.value,
+      e: currentEpisode.value,
+      server: activeServer.value
+    }
+  })
 }
 </script>
 
 <style scoped>
-.dropdown-enter-active, .dropdown-leave-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-.dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-8px) scale(0.96); }
 .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 99px; }

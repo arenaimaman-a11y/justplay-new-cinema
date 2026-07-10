@@ -4,17 +4,26 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   // Modul yang digunakan
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: [
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/supabase'
+  ],
+
+  // Masukkan URL dan Key Supabase Anda langsung di sini
+  supabase: {
+    url: 'https://fezcmyvrsrsjgjmikxwd.supabase.co', // Ganti dengan URL Project Supabase Anda
+    key: 'sb_publishable_svLOIXd55_g1asTm0kvmKA_K6XqvDdY', // Publishable Key Anda
+    redirect: false 
+  },
 
   // Konfigurasi Head untuk skrip iklan global
   app: {
     head: {
       script: [
         {
-          // MEMANGGIL KODE IKLAN ADSTERRA YANG BARU
           src: 'https://twigcrucialpal.com/d2/44/41/d24441981f5f5c0080b9c4b671cd48b7.js',
           async: true,
-          tagPosition: 'bodyClose' // Diletakkan di bawah sebelum </body> agar tidak memperlambat loading film
+          tagPosition: 'bodyClose'
         }
       ]
     }
