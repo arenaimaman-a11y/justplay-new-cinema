@@ -1,9 +1,9 @@
 <template>
   <div class="watch-page-wrapper text-white">
     <div class="hero-blur-backdrop" :style="backdropStyle"></div>
-
     <div class="watch-container space-top-safe">
       
+      <!-- Button Back -->
       <div class="section-row mb-3">
         <button @click="$router.push(detailsPageUrl)" class="btn-back-custom">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -14,6 +14,7 @@
         </button>
       </div>
 
+      <!-- Title & Meta -->
       <div class="section-row mb-4">
         <h1 class="movie-main-title">{{ tvDetails?.name || 'Loading Video...' }}</h1>
         <div class="meta-flex-group">
@@ -23,60 +24,70 @@
             Season {{ currentSeason }}
           </span>
           <span class="meta-pill-item">
-            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 16 14"></polygon></svg>
             Episode {{ currentEpisode }}
           </span>
         </div>
       </div>
 
+      <!-- Player Section -->
       <div class="section-row mb-5">
         <div class="player-outer-glow">
           <div class="custom-video-ratio-box shadow-2xl">
             
-            <div 
-                v-if="!isPlayed" 
-                class="absolute-overlay-layer play-ad-bg" 
-                :style="overlayBackdropStyle"
-                @click="handlePlayClick"
+            <ClientOnly>
+              <!-- 1. OVERLAY PLAYER (Sebelum Play Di-klik) -->
+              <div 
+                v-if="!isPlayPressed" 
+                @click="handleFakePlay"
+                class="fake-player-overlay"
+                :style="backdropStyle"
               >
-                <div class="circle-play-pulse">
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" class="play-triangle-icon">
+                <!-- Play Button Center Icon -->
+                <div class="play-button-trigger">
+                  <svg viewBox="0 0 24 24" class="play-svg-icon" fill="currentColor">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                   </svg>
                 </div>
-                <span class="text-pulse-ad"></span>
+                <!-- Mini Info Banner -->
+                <div class="fake-player-banner">
+                  <span>PLAY - Season {{ currentSeason }} Ep {{ currentEpisode }}</span>
+                </div>
               </div>
 
-            <iframe  
-              v-if="isPlayed"
-              :key="`player-${tvId}-${currentSeason}-${currentEpisode}`"
-              :src="currentPlayerUrl" 
-              allowfullscreen
-              scrolling="no"
-              allow="autoplay; encrypted-media"
-              class="core-iframe-player">
-            </iframe>
+              <!-- 2. MAIN MOVIE IFRAME PLAYER (Aktif Setelah Klik Pertama) -->
+              <iframe  
+                v-else
+                :key="`player-${tvId}-${currentSeason}-${currentEpisode}`"
+                :src="currentPlayerUrl" 
+                allowfullscreen
+                scrolling="no"
+                allow="autoplay; encrypted-media"
+                class="core-iframe-player"
+              >
+              </iframe>
+            </ClientOnly>
+
           </div>
         </div>
       </div>
 
+      <!-- Area Bawah Player -->
       <div class="section-row">
         <div class="custom-modern-card">
           <div class="card-header-title-flex">
             <div class="neon-bar-indicator"></div>
-            <h3 class="card-heading-text">Sponsored Content</h3>
+            <h3 class="card-heading-text">Streaming Information</h3>
           </div>
           
-          <div class="adsterra-dashed-wrapper">
-            <span class="adsterra-notice-tag">ADVERTISEMENT</span>
-            <div class="adsterra-inject-box">
-              <div id="container-dd5a3c4937ebe8b47da808bcd5e1d283"></div>
-            </div>
+          <div class="streaming-info-content">
+            <p class="info-text-main">
+              You are currently watching <strong>{{ tvDetails?.name }}</strong> Season {{ currentSeason }} Episode {{ currentEpisode }}.
+            </p>
+            <p class="info-text-sub">
+              If the current server is slow or buffering, please switch alternative servers provided inside the video player menu or reload your browser window.
+            </p>
           </div>
-        </div>
-
-        <div class="buffer-footer-info">
-          <p>If the video is buffering, you can try switching servers inside the player or refresh the page.</p>
         </div>
       </div>
 
@@ -85,32 +96,30 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const config = useRuntimeConfig()
 const route = useRoute()
-
 const tvId = route.params.id
 const tvSlug = route.params.slug || ''
 const tmdbImgUrl = 'https://image.tmdb.org/t/p/original'
 
-// Reactive State
-const isPlayed = ref(false)
-const activeServer = ref(route.query.server || 'vidsrc_me')
-
-// Parsing awal dari slug
 const parts = tvSlug.split('-')
 const currentEpisode = ref(parseInt(route.query.e) || (parts.length >= 3 ? parseInt(parts[parts.length - 1]) : 1))
 const currentSeason = ref(parseInt(route.query.s) || (parts.length >= 3 ? parseInt(parts[parts.length - 2]) : 1))
+const activeServer = ref(route.query.server || 'vidsrc_me')
 
-// Watch untuk update otomatis saat query URL berubah
+// State untuk memantau apakah player overlay sudah di-klik
+const isPlayPressed = ref(false)
+
+// Reset overlay jika user mengganti episode lewat parameter rute
 watch(
   () => [route.query.s, route.query.e, route.query.server],
   ([newS, newE, newServer]) => {
     if (newS) currentSeason.value = parseInt(newS)
     if (newE) currentEpisode.value = parseInt(newE)
     if (newServer) activeServer.value = newServer
-    isPlayed.value = false
+    isPlayPressed.value = false // Tampilkan kembali Overlay Player untuk episode baru
   }
 )
 
@@ -134,53 +143,107 @@ const detailsPageUrl = computed(() => {
 const currentPlayerUrl = computed(() => {
   const s = currentSeason.value
   const e = currentEpisode.value
-  if (activeServer.value === 'vidsrc_cc') return `https://vidsrc.cc/v2/embed/tv/${tvId}/${s}/${e}`
-  if (activeServer.value === 'vidsrc_to') return `https://vidsrc.to/embed/tv/${tvId}/${s}/${e}`
-  return `https://vidsrc.me/embed/tv?tmdb=${tvId}&season=${s}&episode=${e}`
+  const suffix = "?autoplay=1" 
+  if (activeServer.value === 'vidsrc_cc') return `https://vidsrc.cc/v2/embed/tv/${tvId}/${s}/${e}${suffix}`
+  if (activeServer.value === 'vidsrc_to') return `https://vidsrc.to/embed/tv/${tvId}/${s}/${e}${suffix}`
+  return `https://vidsrc.me/embed/tv?tmdb=${tvId}&season=${s}&episode=${e}&autoplay=1`
 })
 
 const backdropStyle = computed(() => {
   if (tvDetails.value?.backdrop_path) {
-    return { backgroundImage: `linear-gradient(to bottom, rgba(8,9,12,0.7) 0%, #08090c 100%), url(${tmdbImgUrl}${tvDetails.value.backdrop_path})` }
+    return { backgroundImage: `linear-gradient(to bottom, rgba(8,9,12,0.65) 0%, #08090c 100%), url(${tmdbImgUrl}${tvDetails.value.backdrop_path})` }
   }
   return { backgroundColor: '#08090c' }
 })
 
-const overlayBackdropStyle = computed(() => {
-  if (tvDetails.value?.backdrop_path) {
-    return {
-      backgroundImage: `linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.75)), url(${tmdbImgUrl}${tvDetails.value.backdrop_path})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }
-  }
-  return { backgroundColor: 'rgba(0, 0, 0, 0.85)' } // Fallback jika gambar gagal dimuat
-})
-
-const handlePlayClick = () => {
-  window.open('https://twigcrucialpal.com/qhexrkev?key=8f5d9e9efc0679706823f58257516b31', '_blank')
-  setTimeout(() => { isPlayed.value = true }, 100)
+// Membuka video player asli secara langsung tanpa pemicu iklan
+const handleFakePlay = () => {
+  isPlayPressed.value = true
 }
-
-onMounted(() => {
-  const scripts = [
-    { id: 'adsterra-new-widget', src: 'https://twigcrucialpal.com/dd5a3c4937ebe8b47da808bcd5e1d283/invoke.js' }
-  ]
-  
-  scripts.forEach(item => {
-    const old = document.getElementById(item.id)
-    if (old) old.remove()
-    const script = document.createElement('script')
-    script.id = item.id
-    script.src = item.src
-    script.async = true
-    document.head.appendChild(script)
-  })
-})
 </script>
 
 <style scoped>
-/* (Style Anda tetap sama seperti sebelumnya) */
+/* PLAYER OVERLAY STYLING */
+.fake-player-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.3s ease;
+}
+
+.fake-player-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  transition: background 0.3s ease;
+}
+
+.fake-player-overlay:hover::after {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.play-button-trigger {
+  width: 76px;
+  height: 76px;
+  background: #ef4444; /* Warna Merah khas tema */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+  z-index: 25;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fake-player-overlay:hover .play-button-trigger {
+  transform: scale(1.12);
+  background: #f87171;
+  box-shadow: 0 0 45px rgba(239, 68, 68, 0.8);
+}
+
+.play-svg-icon {
+  width: 28px;
+  height: 28px;
+  color: #ffffff;
+  margin-left: 4px; /* Align visual offset segitiga */
+}
+
+.fake-player-banner {
+  margin-top: 18px;
+  background: rgba(8, 9, 12, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #e5e5e5;
+  z-index: 25;
+  backdrop-filter: blur(4px);
+}
+
+/* KODE STYLE ASLI */
+.custom-video-ratio-box { position: relative; width: 100%; padding-top: 56.25%; background: #000000; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; overflow: hidden; }
+.custom-modern-card { background: rgba(13, 17, 23, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 25px; box-sizing: border-box; }
+.card-header-title-flex { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.neon-bar-indicator { width: 4px; height: 18px; background: #ef4444; border-radius: 4px; }
+.card-heading-text { color: #f8f9fa; font-size: 1.05rem; font-weight: 700; margin: 0; }
+.streaming-info-content { display: flex; flex-direction: column; gap: 8px; }
+.info-text-main { font-size: 0.95rem; color: rgba(255, 255, 255, 0.85); margin: 0; line-height: 1.5; }
+.info-text-main strong { color: #ef4444; }
+.info-text-sub { font-size: 0.82rem; color: rgba(255, 255, 255, 0.45); margin: 0; line-height: 1.6; }
 .watch-page-wrapper { background-color: #08090c; font-family: 'Inter', system-ui, -apple-system, sans-serif; overflow-x: hidden; position: relative; min-height: 100vh; width: 100%; }
 .watch-container { width: 100%; max-width: 1140px; margin-right: auto; margin-left: auto; padding: 24px 16px; box-sizing: border-box; position: relative; z-index: 5; }
 .space-top-safe { padding-top: 105px !important; }
@@ -190,32 +253,13 @@ onMounted(() => {
 .hero-blur-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 340px; background-size: cover; background-position: center top; filter: blur(60px); opacity: 0.2; z-index: 1; pointer-events: none; }
 @media (min-width: 768px) { .hero-blur-backdrop { height: 550px; opacity: 0.3; } }
 .btn-back-custom { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); color: #e5e5e5; padding: 8px 18px; font-size: 0.82rem; font-weight: 600; border-radius: 50px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; backdrop-filter: blur(8px); }
-.btn-back-custom:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(0, 242, 254, 0.4); color: #ffffff; }
+.btn-back-custom:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(239, 68, 68, 0.4); color: #ffffff; }
 .movie-main-title { color: #ffffff; font-weight: 800; margin: 0 0 10px 0; line-height: 1.2; letter-spacing: -0.5px; font-size: 1.5rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 @media (min-width: 768px) { .movie-main-title { font-size: 2.25rem; } }
 .meta-flex-group { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.badge-streaming { background: linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.4) 100%); color: #08090c; font-size: 0.62rem; font-weight: 800; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.badge-streaming { background: linear-gradient(135deg, rgba(239, 68, 68, 1) 0%, rgba(185, 28, 28, 1) 100%); color: #ffffff; font-size: 0.62rem; font-weight: 800; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.5px; }
 .meta-pill-item { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 500; }
 .player-outer-glow { position: relative; width: 100%; }
-.player-outer-glow::before { content: ''; position: absolute; top: 5%; left: 2%; width: 96%; height: 90%; background: rgba(0, 242, 254, 0.08); filter: blur(50px); z-index: -1; pointer-events: none; }
-.custom-video-ratio-box { position: relative; width: 100%; padding-top: 56.25%; background: #000000; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; overflow: hidden; }
+.player-outer-glow::before { content: ''; position: absolute; top: 5%; left: 2%; width: 96%; height: 90%; background: rgba(239, 68, 68, 0.08); filter: blur(50px); z-index: -1; pointer-events: none; }
 .core-iframe-player { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; border: none; z-index: 2; }
-.absolute-overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; padding: 16px; cursor: pointer; }
-.play-ad-bg { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); transition: background 0.25s ease; }
-.play-ad-bg:hover { background: rgba(0, 0, 0, 0.62); }
-.circle-play-pulse { width: 54px; height: 54px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.4) 100%); border-radius: 50%; color: #08090c; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); transition: transform 0.2s ease; }
-.play-triangle-icon { margin-left: 3px; }
-@media (min-width: 576px) { .circle-play-pulse { width: 70px; height: 70px; } }
-.play-ad-bg:hover .circle-play-pulse { transform: scale(1.1); box-shadow: 0 0 30px rgba(0, 242, 254, 0.5); }
-.text-pulse-ad { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255, 255, 255, 0.9); }
-@media (min-width: 576px) { .text-pulse-ad { font-size: 0.82rem; letter-spacing: 2px; } }
-.custom-modern-card { background: rgba(13, 17, 23, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; box-sizing: border-box; }
-@media (min-width: 768px) { .custom-modern-card { padding: 32px; } }
-.card-header-title-flex { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-.neon-bar-indicator { width: 4px; height: 18px; background: #00f2fe; border-radius: 4px; }
-.card-heading-text { color: #f8f9fa; font-size: 1.05rem; font-weight: 700; margin: 0; }
-.adsterra-dashed-wrapper { background: rgba(0, 0, 0, 0.2); border-radius: 8px; border: 1px dashed rgba(255, 255, 255, 0.1); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 130px; box-sizing: border-box; }
-.adsterra-notice-tag { font-size: 0.6rem; font-weight: 700; color: rgba(255, 255, 255, 0.2); letter-spacing: 2px; margin-bottom: 12px; }
-.adsterra-inject-box { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-.buffer-footer-info { text-align: center; margin-top: 30px; color: rgba(255, 255, 255, 0.4); font-size: 0.78rem; padding: 0 10px; }
 </style>
