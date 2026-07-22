@@ -198,7 +198,7 @@ let timer = null
 let pollInterval = null
 
 // Smartlink AdBlueMedia Anda
-const BASE_SMARTLINK = 'https://app.hawktrk.com/sl?id=6a2050db46d3cf0d62f32aa4&pid=2&sub2=u789901&sub6=s2smartLink&sub5=s1SUBID1HERE'
+const BASE_SMARTLINK = 'https://app.hawktrk.com/sl?id=6a2050db46d3cf0d62f32aa4&pid=2&sub2=u789901&sub6=s2smartLink&sub5=s1Tonz'
 
 onMounted(() => {
   // 1. Cek apakah pengguna sudah pernah menyelesaikan survei
